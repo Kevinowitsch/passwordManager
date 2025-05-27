@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/kevinfriedrich/projects/passwordManager/include
+CXX_INCLUDES = -I/home/kevinfriedrich/projects/passwordManager/include -I/home/kevinfriedrich/projects/_libraries/libbcrypt
 
 CXX_FLAGS = -std=gnu++17
 

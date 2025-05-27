@@ -17,6 +17,14 @@ int main(int argc, char* argv[]) {
         }
     } else if (command == "get" && argc == 3) {
         std::cout << "Passwort: " << db.getPassword(argv[2]) << "\n";
+    } else if (command == "verify" && argc == 4){
+        bool status = db.verifyPassword(argv[2], argv[3]);
+        if (status)
+        {
+            std::cout << "\033[32m" << "Passwort korrekt" << "\033[0m" << "\n";
+        } else {
+            std::cout << "\033[31m" << "Passwort falsch" << "\033[0m" << "\n";
+        }
     } else if (command == "delete" && argc == 3) {
         if (db.deletePassword(argv[2])) {
             std::cout << "Passwort gelöscht.\n";

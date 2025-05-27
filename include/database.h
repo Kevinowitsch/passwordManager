@@ -10,6 +10,7 @@ public:
     ~Database();
     bool addPassword(const std::string& name, const std::string& password);
     std::string getPassword(const std::string& name);
+    bool verifyPassword(const std::string& name, const std::string& inputPassword);
     bool deletePassword(const std::string& name);
     void listPasswords();
 

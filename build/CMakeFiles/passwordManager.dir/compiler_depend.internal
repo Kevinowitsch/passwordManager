@@ -3,6 +3,7 @@
 
 CMakeFiles/passwordManager.dir/src/database.cpp.o
  /home/kevinfriedrich/projects/passwordManager/src/database.cpp
+ /home/kevinfriedrich/projects/_libraries/libbcrypt/bcrypt.h
  /home/kevinfriedrich/projects/passwordManager/include/database.h
  /usr/include/alloca.h
  /usr/include/asm-generic/errno-base.h
