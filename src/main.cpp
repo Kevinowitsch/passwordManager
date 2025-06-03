@@ -1,8 +1,30 @@
 #include <iostream>
 #include "database.h"
+#include "utils.h"
 
 int main(int argc, char* argv[]) {
     Database db("passwords.db");
+    std::string masterInput;
+
+    //TODO Entweder parameter übergeben oder Loop der auf eingabe wartet
+    if (db.isMasterPasswordSet()) {
+        masterInput = getHiddenInput("🔐 Bitte gib dein Masterpasswort ein: ");
+
+        if (!db.verifyMasterPassword(masterInput)) {
+            std::cerr << "❌ Falsches Masterpasswort. Zugriff verweigert.\n";
+            return 1;
+        }
+        std::cout << "✅ Zugriff gewährt.\n";
+    } else {
+        masterInput = getHiddenInput("🔐 Kein Masterpasswort gesetzt. Bitte neues Masterpasswort eingeben: ");
+
+        if (!db.setMasterPassword(masterInput)) {
+            std::cerr << "❌ Fehler beim Speichern des Masterpassworts.\n";
+            return 1;
+        }
+        std::cout << "✅ Masterpasswort gesetzt.\n";
+    }
+    
 
     if (argc < 2) {
         std::cout << "Verwendung: ./passwordManager <Befehl> [Argumente]\n";
@@ -12,7 +34,7 @@ int main(int argc, char* argv[]) {
     std::string command = argv[1];
 
     if (command == "add" && argc == 4) {
-        if (db.addPassword(argv[2], argv[3])) {
+        if (db.addPassword(argv[2], argv[3], masterInput)) {
             std::cout << "Passwort gespeichert.\n";
         }
     } else if (command == "get" && argc == 3) {
@@ -30,7 +52,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Passwort gelöscht.\n";
         }
     } else if (command == "list") {
-        db.listPasswords();
+        db.listAccounts();
     } else {
         std::cout << "Ungültiger Befehl!\n";
     }
