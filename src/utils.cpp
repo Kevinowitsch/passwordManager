@@ -101,3 +101,39 @@ bool encryptAES(const std::string& plaintext, const std::string& key, std::strin
     EVP_CIPHER_CTX_free(ctx);
     return true;
 }
+
+bool decryptAES(const std::string& ciphertext, const std::string& key, const std::string& iv, std::string& plaintext) {
+    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return false;
+
+    int len;
+    int plaintext_len;
+    plaintext.resize(ciphertext.size());
+
+    if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), nullptr,
+                           reinterpret_cast<const unsigned char*>(key.data()),
+                           reinterpret_cast<const unsigned char*>(iv.data())) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return false;
+    }
+
+    if (EVP_DecryptUpdate(ctx,
+                          reinterpret_cast<unsigned char*>(&plaintext[0]), &len,
+                          reinterpret_cast<const unsigned char*>(ciphertext.data()),
+                          ciphertext.size()) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return false;
+    }
+    plaintext_len = len;
+
+    if (EVP_DecryptFinal_ex(ctx,
+                            reinterpret_cast<unsigned char*>(&plaintext[0]) + len, &len) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return false;
+    }
+    plaintext_len += len;
+    plaintext.resize(plaintext_len);
+
+    EVP_CIPHER_CTX_free(ctx);
+    return true;
+}

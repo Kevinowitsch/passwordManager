@@ -2,11 +2,16 @@
 
 Ein einfacher Passwortmanager in C++, der Passwörter verschlüsselt in einer SQLite-Datenbank speichert.
 
+## ➕ TODO
+-Master Passwort ändern
+-Session Token
+-CMakeList allgemein gestalten (user clont, installiert)
+
 ## ⚙️ Setup
 
 1. Repository klonen:
    ```bash
-   git clone https://github.com/dein-benutzername/passwordManager.git
+   git clone https://github.com/Kevinowitsch/passwordManager.git
    cd passwordManager
    ```
 

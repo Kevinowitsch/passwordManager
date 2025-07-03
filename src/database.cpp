@@ -114,18 +114,36 @@ bool Database::addPassword(const std::string& name, const std::string& password,
 }
 
 
-std::string Database::getPassword(const std::string& name) {
-    std::string query = "SELECT password FROM passwords WHERE name = '" + name + "';";
+std::string Database::getPassword(const std::string& name, const std::string& masterPassword) {
+    const char* query = "SELECT password, iv FROM passwords WHERE name = ?;";
     sqlite3_stmt* stmt;
-    std::string password = "Kein Passwort gefunden";
+    std::string decryptedPassword = "❌ Kein Passwort gefunden oder Entschlüsselung fehlgeschlagen";
 
-    if (sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
+
         if (sqlite3_step(stmt) == SQLITE_ROW) {
-            password = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+            const void* ciphertext_blob = sqlite3_column_blob(stmt, 0);
+            int ciphertext_size = sqlite3_column_bytes(stmt, 0);
+            const void* iv_blob = sqlite3_column_blob(stmt, 1);
+            int iv_size = sqlite3_column_bytes(stmt, 1);
+
+            std::string ciphertext(reinterpret_cast<const char*>(ciphertext_blob), ciphertext_size);
+            std::string iv(reinterpret_cast<const char*>(iv_blob), iv_size);
+
+            std::string key = deriveKeyFromPassword(masterPassword);
+            std::string plaintext;
+
+            if (decryptAES(ciphertext, key, iv, plaintext)) {
+                decryptedPassword = plaintext;
+            }
         }
+    } else {
+        std::cerr << "Fehler beim SQL-Statement: " << sqlite3_errmsg(db) << std::endl;
     }
+
     sqlite3_finalize(stmt);
-    return password;
+    return decryptedPassword;
 }
 
 bool Database::verifyPassword(const std::string& name, const std::string& inputPassword) {

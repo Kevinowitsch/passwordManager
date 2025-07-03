@@ -33,13 +33,36 @@ int main(int argc, char* argv[]) {
 
     std::string command = argv[1];
 
-    if (command == "add" && argc == 4) {
-        if (db.addPassword(argv[2], argv[3], masterInput)) {
-            std::cout << "Passwort gespeichert.\n";
+    if (command == "add" && argc == 3) {
+        std::string pw = getHiddenInput("🔑 Passwort eingeben: ");
+        if (pw.empty()) {
+            std::cerr << "⚠️  Passwort darf nicht leer sein!\n";
+            return 1;
+        }
+
+        if (db.addPassword(argv[2], pw, masterInput)) {
+            std::cout << "✅ Passwort gespeichert.\n";
+        } else {
+            std::cerr << "❌ Fehler beim Speichern des Passworts.\n";
+        }
+    }
+    else if (command == "add" && argc == 4) {
+        std::string pw(argv[3]);
+        if (pw.empty()) {
+            std::cerr << "⚠️  Passwort fehlt oder ist leer. Tipp: Sonderzeichen wie '>' in Anführungszeichen setzen!\n";
+            return 1;
+        }
+
+        if (db.addPassword(argv[2], pw, masterInput)) {
+            std::cout << "✅ Passwort gespeichert.\n";
+        } else {
+            std::cerr << "❌ Fehler beim Speichern des Passworts.\n";
         }
     } else if (command == "get" && argc == 3) {
-        std::cout << "Passwort: " << db.getPassword(argv[2]) << "\n";
-    } else if (command == "verify" && argc == 4){
+        std::string password = db.getPassword(argv[2], masterInput);
+        std::cout << "🔓 Passwort: " << password << "\n";
+    }
+    else if (command == "verify" && argc == 4){
         bool status = db.verifyPassword(argv[2], argv[3]);
         if (status)
         {
