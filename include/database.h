@@ -15,7 +15,7 @@ public:
 
     bool addPassword(const std::string& name, const std::string& password, const std::string& masterPassword);
     std::string getPassword(const std::string& name, const std::string& masterPassword);
-    bool verifyPassword(const std::string& name, const std::string& inputPassword);
+    bool verifyPassword(const std::string& name, const std::string& inputPassword, const std::string& masterPassword);
     bool deletePassword(const std::string& name);
     void listAccounts();
 

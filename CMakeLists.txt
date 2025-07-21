@@ -8,17 +8,14 @@ add_executable(
     src/main.cpp
     src/database.cpp
     src/utils.cpp
-    /home/kevinfriedrich/projects/_libraries/libbcrypt/bcrypt.o
 )
 
 find_package(SQLite3 REQUIRED)
 find_package(OpenSSL REQUIRED)
 
-target_link_libraries(passwordManager SQLite::SQLite3 OpenSSL::Crypto /usr/local/lib/bcrypt.a)
+target_link_libraries(passwordManager SQLite::SQLite3 OpenSSL::Crypto ${CMAKE_SOURCE_DIR}/libbcrypt/bcrypt.a)
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
-    /home/kevinfriedrich/projects/_libraries/libbcrypt
+    libbcrypt
 )
-
-link_directories(/usr/local/lib)

@@ -1,19 +1,20 @@
 #include <iostream>
+#include <iomanip>
 #include "database.h"
 #include "utils.h"
 #include "bcrypt.h"
 
 Database::Database(const std::string& db_name) {
     if (sqlite3_open(db_name.c_str(), &db) != SQLITE_OK) {
-        std::cerr << "Fehler beim Öffnen der Datenbank!\n";
+        std::cerr << "\033[31mFehler beim Öffnen der Datenbank!\033[0m\n";
     }
     std::string createMasterTable = "CREATE TABLE IF NOT EXISTS master (id INTEGER PRIMARY KEY, hash TEXT NOT NULL);";
     if (!executeQuery(createMasterTable)) {
-        std::cerr << "❌ Fehler beim Erstellen der Tabelle 'master'\n";
+        std::cerr << "\033[31mFehler beim Erstellen der Tabelle 'master'\033[0m\n";
     }
     std::string createPasswordTable = "CREATE TABLE IF NOT EXISTS passwords (name TEXT PRIMARY KEY, password BLOB NOT NULL, iv BLOB NOT NULL);";
     if (!executeQuery(createPasswordTable)) {
-        std::cerr << "❌ Fehler beim Erstellen der Tabelle 'passwords'\n";
+        std::cerr << "\033[31mFehler beim Erstellen der Tabelle 'passwords'\033[0m\n";
     }
 }
 
@@ -45,6 +46,7 @@ bool Database::isMasterPasswordSet() {
     return isSet;
 }
 
+// Verwendung von bcrypt da Masterpasswort nicht rekonstruierbar sein muss
 bool Database::setMasterPassword(const std::string& password) {
     char hash[BCRYPT_HASHSIZE];
     char salt[BCRYPT_HASHSIZE];
@@ -54,7 +56,7 @@ bool Database::setMasterPassword(const std::string& password) {
         return false;
     }
 
-    std::string query = "INSERT INTO master (hash) VALUES (?);";
+    std::string query = "INSERT OR REPLACE INTO master (id, hash) VALUES (1, ?);";
     sqlite3_stmt* stmt;
 
     if (sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK){
@@ -67,6 +69,7 @@ bool Database::setMasterPassword(const std::string& password) {
     return success;
 }
 
+// Verwendung von bcrypt da Masterpasswort nicht rekonstruierbar sein muss
 bool Database::verifyMasterPassword(const std::string& inputPassword) {
     std::string query = "SELECT hash FROM master LIMIT 1;";
     sqlite3_stmt* stmt;
@@ -94,8 +97,6 @@ bool Database::addPassword(const std::string& name, const std::string& password,
         return false;
     }
 
-    // Angenommen, du hast die Tabelle so angepasst:
-    // CREATE TABLE IF NOT EXISTS passwords (name TEXT PRIMARY KEY, password BLOB, iv BLOB);
     std::string query = "INSERT INTO passwords (name, password, iv) VALUES (?, ?, ?);";
     sqlite3_stmt* stmt;
 
@@ -117,7 +118,7 @@ bool Database::addPassword(const std::string& name, const std::string& password,
 std::string Database::getPassword(const std::string& name, const std::string& masterPassword) {
     const char* query = "SELECT password, iv FROM passwords WHERE name = ?;";
     sqlite3_stmt* stmt;
-    std::string decryptedPassword = "❌ Kein Passwort gefunden oder Entschlüsselung fehlgeschlagen";
+    std::string decryptedPassword = "\033[31mKein Passwort gefunden oder Entschlüsselung fehlgeschlagen\033[0m";
 
     if (sqlite3_prepare_v2(db, query, -1, &stmt, nullptr) == SQLITE_OK) {
         sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
@@ -146,20 +147,39 @@ std::string Database::getPassword(const std::string& name, const std::string& ma
     return decryptedPassword;
 }
 
-bool Database::verifyPassword(const std::string& name, const std::string& inputPassword) {
-    const char* query = "SELECT password FROM passwords WHERE name = ?;";
+bool Database::verifyPassword(const std::string& name, const std::string& inputPassword, const std::string& masterPassword) {
+    const char* query = "SELECT password, iv FROM passwords WHERE name = ?;";
     sqlite3_stmt* stmt;
     bool result = false;
 
     if (sqlite3_prepare_v2(db, query, -1, &stmt, nullptr) == SQLITE_OK) {
-        // Benutzername sicher binden
         sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
 
         if (sqlite3_step(stmt) == SQLITE_ROW) {
-            const unsigned char* storedHash = sqlite3_column_text(stmt, 0);
-            if (storedHash != nullptr &&
-                bcrypt_checkpw(inputPassword.c_str(), reinterpret_cast<const char*>(storedHash)) == 0) {
-                result = true;
+            const void* ciphertext_blob = sqlite3_column_blob(stmt, 0);
+            int ciphertext_size = sqlite3_column_bytes(stmt, 0);
+            const void* iv_blob = sqlite3_column_blob(stmt, 1);
+            int iv_size = sqlite3_column_bytes(stmt, 1);
+
+            std::string ciphertext(reinterpret_cast<const char*>(ciphertext_blob), ciphertext_size);
+            std::string iv(reinterpret_cast<const char*>(iv_blob), iv_size);
+            std::string key = deriveKeyFromPassword(masterPassword);
+
+            std::string decrypted;
+            if (decryptAES(ciphertext, key, iv, decrypted)) {
+
+                /* Check Bytes in AES Encryption
+                std::cout << "⤵️  Entschlüsselt (hex): ";
+                for (char c : decrypted)
+                    std::cout << std::hex << std::setw(2) << std::setfill('0') << (static_cast<int>(c) & 0xff) << " ";
+                std::cout << "\n";
+
+                std::cout << "⤵️  Eingabe (hex):      ";
+                for (char c : inputPassword)
+                    std::cout << std::hex << std::setw(2) << std::setfill('0') << (static_cast<int>(c) & 0xff) << " ";
+                std::cout << "\n";
+                */
+                result = (decrypted == inputPassword);
             }
         }
     } else {

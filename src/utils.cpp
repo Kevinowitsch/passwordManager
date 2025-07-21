@@ -5,38 +5,9 @@
 #include <openssl/sha.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include "utils.h"
 
 #define AES_BLOCK_SIZE 16
-
-std::string getMaskedInput(const std::string& prompt) {
-    std::string password;
-    char ch;
-    struct termios oldt, newt;
-
-    std::cout << prompt;
-    // Eingabemodus holen und ändern
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ECHO); // Echo deaktivieren
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-
-    while (std::cin.get(ch) && ch != '\n') {
-        if (ch == 127 || ch == 8) { // Backspace
-            if (!password.empty()) {
-                password.pop_back();
-                std::cout << "\b \b"; // Zeichen löschen
-            }
-        } else {
-            password += ch;
-            std::cout << '*';
-        }
-    }
-
-    // Ursprünglichen Terminalmodus wiederherstellen
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-    std::cout << std::endl;
-    return password;
-}
 
 std::string getHiddenInput(const std::string& prompt) {
     std::string password;
@@ -55,6 +26,7 @@ std::string getHiddenInput(const std::string& prompt) {
     return password;
 }
 
+// Berechnet key für AES
 std::string deriveKeyFromPassword(const std::string& password) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256(reinterpret_cast<const unsigned char*>(password.c_str()), password.size(), hash);
@@ -136,4 +108,26 @@ bool decryptAES(const std::string& ciphertext, const std::string& key, const std
 
     EVP_CIPHER_CTX_free(ctx);
     return true;
+}
+
+void printUsage() {
+    std::cout << "Ausführbare Befehle:\n"
+              << "  add <name> [password]\n"
+              << "  get <name>\n"
+              << "  list\n"
+              << "  verify <name> [password]\n"
+              << "  delete <name>\n"
+              << "  exit\n"
+              << "  help\n";
+}
+
+bool confirmDeletion() {
+    std::string input;
+    std::cout << "Möchten Sie das Passwort wirklich löschen? [Y/n] ";
+    std::getline(std::cin, input);
+
+    if (input.empty() || input == "Y" || input == "y") {
+        return true;
+    }
+    return false;
 }
