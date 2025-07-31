@@ -82,17 +82,19 @@ bool decryptAES(const std::string& ciphertext, const std::string& key, const std
     int plaintext_len;
     plaintext.resize(ciphertext.size());
 
-    if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), nullptr,
-                           reinterpret_cast<const unsigned char*>(key.data()),
-                           reinterpret_cast<const unsigned char*>(iv.data())) != 1) {
+    if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(),
+                        nullptr,
+                        reinterpret_cast<const unsigned char*>(key.data()),
+                        reinterpret_cast<const unsigned char*>(iv.data())) != 1) {
         EVP_CIPHER_CTX_free(ctx);
         return false;
     }
 
     if (EVP_DecryptUpdate(ctx,
-                          reinterpret_cast<unsigned char*>(&plaintext[0]), &len,
-                          reinterpret_cast<const unsigned char*>(ciphertext.data()),
-                          ciphertext.size()) != 1) {
+                        reinterpret_cast<unsigned char*>(&plaintext[0]),
+                        &len,
+                        reinterpret_cast<const unsigned char*>(ciphertext.data()),
+                        ciphertext.size()) != 1) {
         EVP_CIPHER_CTX_free(ctx);
         return false;
     }

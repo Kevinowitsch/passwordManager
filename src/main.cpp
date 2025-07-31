@@ -40,8 +40,8 @@ int main(int argc, char* argv[]) {
     
     // Ungültiger Aufruf mit Argumenten
     if (argc != 1) {
-        std::cerr << "\033[31mDieses Programm darf nur ohne Argumente gestartet werden.\033[0m\n";
-        std::cerr << "Beispiel: ./passwordManager\n";
+        std::cerr << "\033[31mFalscher Aufruf des Programms\033[0m\n";
+        std::cerr << "Beispiele:\n ./passwordManager\n ./passwordManager change_master\n ./passwordManager verify_master\n";
         return 1;
     }
     

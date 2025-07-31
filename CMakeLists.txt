@@ -17,5 +17,5 @@ target_link_libraries(passwordManager SQLite::SQLite3 OpenSSL::Crypto ${CMAKE_SO
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
-    libbcrypt
+    ${CMAKE_SOURCE_DIR}/libbcrypt
 )

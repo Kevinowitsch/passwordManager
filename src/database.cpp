@@ -105,6 +105,7 @@ bool Database::addPassword(const std::string& name, const std::string& password,
         return false;
     }
 
+    // Verknüfpt Parameter mit dem prepared Statement 
     sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_blob(stmt, 2, ciphertext.data(), ciphertext.size(), SQLITE_STATIC);
     sqlite3_bind_blob(stmt, 3, iv.data(), iv.size(), SQLITE_STATIC);
